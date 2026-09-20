@@ -9,7 +9,7 @@ from deploy.utils import *
 
 GIT_OVER_CDN_REPOSITORY = 'git://git.pull/AzurPilot'
 GIT_OVER_CDN_FALLBACK_REPOSITORY = 'https://gitcode.com/ddl2/AzurLaneAutoScript'
-GITHUB_REPOSITORY = 'https://github.com/wess09/AzurPilot'
+GITHUB_REPOSITORY = 'https://github.com/zhuceney/AzurPilot'
 
 
 class ExecutionError(Exception):
@@ -167,12 +167,14 @@ class DeployConfig(ConfigModel):
         if self.Repository in ['cn']:
             super().__setattr__('Repository', GIT_OVER_CDN_REPOSITORY)
 
-    def _redirect_github_repository(self):
-        """为官方 GitHub 源一次性选择适合当前网络的更新镜像。"""
-        if self._github_location_checked or self.Repository != GITHUB_REPOSITORY:
-            return
-
+def _redirect_github_repository(self):
+    if self._github_location_checked or self.Repository != GITHUB_REPOSITORY:
+        return
+    # 如果用户使用的是自定义 Fork，跳过自动重定向
+    if self.Repository == 'https://github.com/zhuceney/AzurPilot':
         self._github_location_checked = True
+        return
+    self._github_location_checked = True
         country_code = get_country_code()
         if country_code == 'cn':
             logger.info('检测到中国大陆网络，切换至国内 Git 更新源')
