@@ -19,7 +19,7 @@ class ExecutionError(Exception):
 class ConfigModel:
     # Git 配置
     Repository: str = GITHUB_REPOSITORY
-    Branch: str = "master"
+    Branch: str = "deploy"
     GitExecutable: str = "./.venv/Scripts/git/cmd/git.exe" if sys.platform == "win32" else "./.venv/bin/git"
     GitProxy: Optional[str] = None
     SSLVerify: bool = False
