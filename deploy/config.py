@@ -167,14 +167,15 @@ class DeployConfig(ConfigModel):
         if self.Repository in ['cn']:
             super().__setattr__('Repository', GIT_OVER_CDN_REPOSITORY)
 
-def _redirect_github_repository(self):
-    if self._github_location_checked or self.Repository != GITHUB_REPOSITORY:
-        return
-    # 如果用户使用的是自定义 Fork，跳过自动重定向
-    if self.Repository == 'https://github.com/zhuceney/AzurPilot':
+    def _redirect_github_repository(self):
+        """为官方 GitHub 源一次性选择适合当前网络的更新镜像。"""
+        if self._github_location_checked or self.Repository != GITHUB_REPOSITORY:
+            return
+
         self._github_location_checked = True
-        return
-    self._github_location_checked = True
+        # 用户使用自定义 Fork，保留原仓库地址，不做 CDN 重定向
+        if self.Repository == 'https://github.com/zhuceney/AzurPilot':
+            return
         country_code = get_country_code()
         if country_code == 'cn':
             logger.info('检测到中国大陆网络，切换至国内 Git 更新源')
@@ -184,7 +185,7 @@ def _redirect_github_repository(self):
             logger.warning('无法检测网络所在国家，保留 GitHub 更新源')
         else:
             logger.info('当前网络不在中国大陆，保留 GitHub 更新源')
-
+            
     def filepath(self, key):
         """根据配置键获取绝对文件路径。
 
