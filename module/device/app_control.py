@@ -2,7 +2,7 @@
 
 管理 Android 应用（碧蓝航线）的启动、停止、缓存清除等操作，
 以及 UI 层级结构（hierarchy）的获取和 XPath 元素查询。
-根据控制方法和模拟器类型自动选择 ADB 或 uiautomator2 后端。
+统一使用 ADB 后端。
 """
 import re
 
@@ -10,45 +10,33 @@ from lxml import etree
 
 from module.base.timer import Timer
 from module.device.method.adb import Adb
-from module.device.method.uiautomator_2 import Uiautomator2
 from module.device.method.utils import HierarchyButton
-from module.device.method.wsa import WSA
 from module.exception import ScriptError
 from module.logger import logger
 
 
-class AppControl(Adb, WSA, Uiautomator2):
+class AppControl(Adb):
     """应用生命周期和 UI 层级管理器。
 
-    通过多重继承组合 ADB、WSA 和 uiautomator2 后端，根据控制方法
-    自动分发应用的启动、停止、状态查询操作。提供 UI 层级转储和
-    XPath 元素查询功能用于界面状态检测。
+    通过继承 ADB 后端，提供应用的启动、停止、状态查询操作。
+    提供 UI 层级转储和 XPath 元素查询功能用于界面状态检测。
 
     Attributes:
         hierarchy (etree._Element): 最近一次获取的 UI 层级树。
-        _app_u2_family (list[str]): 需要使用 uiautomator2 后端的控制方法列表。
         _hierarchy_interval (Timer): 层级获取间隔计时器。
     """
     hierarchy: etree._Element
-    _app_u2_family = ['uiautomator2', 'minitouch', 'scrcpy', 'MaaTouch', 'nemu_ipc']
     _hierarchy_interval = Timer(0.1)
 
     def app_current(self) -> str:
         """获取当前前台运行的应用包名。
 
-        根据控制方法选择不同的获取方式：WSA 使用 WSA 后端，
-        uiautomator2 家族方法使用 uiautomator2 后端，其他使用 ADB。
+        使用 ADB 后端获取当前前台应用的包名。
 
         Returns:
             str: 当前前台应用的包名字符串。
         """
-        method = self.config.Emulator_ControlMethod
-        if self.is_wsa:
-            package = self.app_current_wsa()
-        elif method in AppControl._app_u2_family:
-            package = self.app_current_uiautomator2()
-        else:
-            package = self.app_current_adb()
+        package = self.app_current_adb()
         package = package.strip(' \t\r\n')
         return package
 
@@ -67,8 +55,8 @@ class AppControl(Adb, WSA, Uiautomator2):
     def app_is_running_bounded(self, timeout: int = 10) -> bool:
         """带固定超时检查目标应用是否在前台。
 
-        恢复流程在模拟器异常时使用，避免 uiautomator2 的重试
-        长时间阻塞游戏重启流程。查询走 ADB shell，单次受 timeout 限制。
+        恢复流程在模拟器异常时使用，避免查询长时间阻塞游戏重启流程。
+        查询走 ADB shell，单次受 timeout 限制。
 
         Args:
             timeout (int): 单次 ADB 查询超时秒数，默认 10 秒。
@@ -112,30 +100,18 @@ class AppControl(Adb, WSA, Uiautomator2):
     def app_start(self):
         """启动目标应用（碧蓝航线）。
 
-        根据设备类型和控制方法选择不同的启动方式：
-        WSA 设备指定 display=0，uiautomator2 家族使用 uiautomator2 启动，
-        其他使用 ADB am start。
+        使用 ADB am start 启动目标应用。
         """
-        method = self.config.Emulator_ControlMethod
         logger.info(f'应用启动: {self.package}')
-        if self.config.Emulator_Serial == 'wsa-0':
-            self.app_start_wsa(display=0)
-        elif method in AppControl._app_u2_family:
-            self.app_start_uiautomator2()
-        else:
-            self.app_start_adb()
+        self.app_start_adb()
 
     def app_stop(self):
         """停止目标应用（碧蓝航线）。
 
-        根据控制方法选择 uiautomator2 或 ADB am force-stop 方式。
+        使用 ADB am force-stop 停止目标应用。
         """
-        method = self.config.Emulator_ControlMethod
         logger.info(f'应用停止: {self.package}')
-        if method in AppControl._app_u2_family:
-            self.app_stop_uiautomator2()
-        else:
-            self.app_stop_adb()
+        self.app_stop_adb()
 
     def app_clear(self):
         """清除目标应用的缓存目录。
@@ -173,17 +149,15 @@ class AppControl(Adb, WSA, Uiautomator2):
     def dump_hierarchy(self) -> etree._Element:
         """获取当前界面的 UI 层级结构。
 
+        使用 ADB 后端获取当前界面的 UI 层级结构。
+
         Returns:
             etree._Element: UI 层级元素，可使用 `self.hierarchy.xpath('//*[@text="Hermit"]')` 选取元素。
         """
         self._hierarchy_interval.wait()
         self._hierarchy_interval.reset()
 
-        method = self.config.Emulator_ControlMethod
-        if method in AppControl._app_u2_family:
-            self.hierarchy = self.dump_hierarchy_uiautomator2()
-        else:
-            self.hierarchy = self.dump_hierarchy_adb()
+        self.hierarchy = self.dump_hierarchy_adb()
         return self.hierarchy
 
     def xpath_to_button(self, xpath: str) -> HierarchyButton:
