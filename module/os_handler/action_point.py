@@ -216,7 +216,9 @@ class ActionPointHandler(UI, MapEventHandler):
         # （防止行动力溢出任务会临时关闭该开关，导致统计快照丢箱、图表出现深坑）
         self._action_point_total_with_box = int(current + box_sum)
         self.config._action_point_total_with_box = self._action_point_total_with_box
-        LogRes(self.config).ActionPoint = {'Value': current, 'Total': total}
+        # 仪表盘的 Total 同样使用恒含体力箱口径：写入受开关影响的 total 时，
+        # 防溢出任务运行期间它会退化成 current，WebUI 的行动力卡片会在整段时间里不显示总行动力
+        LogRes(self.config).ActionPoint = {'Value': current, 'Total': self._action_point_total_with_box}
         self.config.update()
         self._action_point_current = current
         self._action_point_box = box
@@ -429,6 +431,13 @@ class ActionPointHandler(UI, MapEventHandler):
             # 处理行动力弹窗上方的强制地图事件
             if self.handle_map_event():
                 continue
+
+        # 「打开弹窗读行动力 → 取消关闭」是设计内的成对操作，一轮里会被连续调用多次
+        # （智能调度+ 决策、短猫前置检查、统计快照），点击记录（最近 15 次）会攒出
+        # 两个按钮各 ≥6 次，被「两个按钮交替点击次数过多」规则误判成卡死。
+        # 只在弹窗确实关闭后清理：真卡死时上面的循环不会跳出，仍由单按钮 ≥12 次兜底。
+        self.device.click_record_remove(ACTION_POINT_REMAIN_OS)
+        self.device.click_record_remove(ACTION_POINT_CANCEL)
 
     def handle_action_point(self, zone, pinned, cost=None, keep_current_ap=True, check_rest_ap=False, avoid_ap_overflow=False):
         """

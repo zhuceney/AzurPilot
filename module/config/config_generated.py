@@ -116,7 +116,9 @@ class GeneratedConfig:
     Error_HandleError = True
     Error_SaveError = True
     Error_StrictRestart = False
-    Error_SaveErrorCount = 30
+    Error_SaveErrorRetentionDays = 30
+    Error_SaveErrorBackUpMethod = 'zip'  # delete, zip, copy
+    Error_SaveErrorZipMethod = 'zip'  # bz2, gzip, xz, zip
     Error_OnePushConfig = 'provider: null'
     Error_ScreenshotLength = 1
     Error_GameStuckRestart = False
@@ -128,7 +130,7 @@ class GeneratedConfig:
     Error_WatchdogTaskTimeout = 120
     Error_RestartOperationTimeoutEnable = False
     Error_RestartOperationTimeout = 120
-    Error_LlmAnalysis = True
+    Error_LlmAnalysis = False
     Error_LlmApiKey = None
     Error_LlmApiBase = 'https://api.xiaomimimo.com/v1'
     Error_LlmModel = 'mimo-v2.5-pro'
@@ -148,7 +150,7 @@ class GeneratedConfig:
     Optimization_ScreenshotInterval = 0.3
     Optimization_CombatScreenshotInterval = 1.0
     Optimization_TaskHoardingDuration = 0
-    Optimization_CloseEmulatorDuringLongWait = True  # True, False
+    Optimization_CloseEmulatorDuringLongWait = False  # True, False
     Optimization_WhenTaskQueueEmpty = 'goto_main'  # stay_there, goto_main, close_game
     Optimization_WhenSchedulerStopped = 'stay_there'  # stay_there, goto_main, close_game, close_emulator
     Optimization_WarmupEnable = True  # True, False
@@ -157,6 +159,8 @@ class GeneratedConfig:
     # 配置组 `DropRecord`
     DropRecord_SaveFolder = './screenshots'
     DropRecord_RetentionDays = 0
+    DropRecord_BackUpMethod = 'zip'  # delete, zip, copy
+    DropRecord_ZipMethod = 'zip'  # bz2, gzip, xz, zip
     DropRecord_AzurStatsID = None
     DropRecord_API = 'default'  # default, cn_gz_reverse_proxy
     DropRecord_ResearchRecord = 'do_not'  # do_not, save, upload, save_and_upload
@@ -316,6 +320,7 @@ class GeneratedConfig:
     C124LargeLeveling_PickupAmmo = 3  # 3, 4, 5
 
     # 配置组 `GemsFarming`
+    GemsFarming_EventFallbackStage = '2-4'
     GemsFarming_ChangeFlagship = 'ship_equip'  # ship, ship_equip
     GemsFarming_CommonCV = 'any'  # custom, any, eagle, langley, bogue, ranger, hermes
     GemsFarming_CommonCVFilter = 'bogue > ranger > langley > hermes'
@@ -336,7 +341,7 @@ class GeneratedConfig:
 
     # 配置组 `EventGeneral`
     EventGeneral_PtLimit = 0
-    EventGeneral_TimeLimit = datetime.datetime(2020, 1, 1, 0, 0)
+    EventGeneral_TimeLimit = datetime.datetime(2023, 1, 1, 0, 0)
 
     # 配置组 `TaskBalancer`
     TaskBalancer_Enable = False
@@ -446,6 +451,8 @@ class GeneratedConfig:
     MeowfficerTrain_Mode = 'seamlessly'  # seamlessly, once_a_day
     MeowfficerTrain_RetainTalentedGold = True
     MeowfficerTrain_RetainTalentedPurple = True
+    MeowfficerTrain_ScoreTalents = False
+    MeowfficerTrain_ScoreThreshold = 0
     MeowfficerTrain_EnhanceIndex = 1
     MeowfficerTrain_MaxFeedLevel = 5
 
@@ -1076,6 +1083,16 @@ class GeneratedConfig:
     EmulatorManager_RemoteSSHPublicKey = None
     EmulatorManager_RemoteStartCommand = None
     EmulatorManager_RemoteStopCommand = None
+
+    # 配置组 `MeowfficerScore`
+    MeowfficerScore_Source = 'screenshot'  # screenshot, device, scan
+    MeowfficerScore_Folder = './screenshots/meowfficer_talent'
+    MeowfficerScore_MaxImages = 50
+    MeowfficerScore_ReportPath = './log/meowfficer_score.md'
+    MeowfficerScore_DeviceShots = 1
+    MeowfficerScore_DeviceInterval = 2
+    MeowfficerScore_ScanLimit = 0
+    MeowfficerScore_ScanPasses = 12
 
     # 配置组 `OpsiSimulatorParameters`
     OpsiSimulatorParameters_Samples = 100000

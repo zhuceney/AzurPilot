@@ -41,6 +41,14 @@ class InstanceParams(Params):
 class CreateParams(Params):
     name: StrictStr = Field(min_length=1, max_length=64)
     source: StrictStr | None = None
+    import_file: StrictStr | None = None
+
+
+class ImportParams(Params):
+    """上传一份配置文件到导入目录，供创建实例时选用。"""
+
+    name: StrictStr = Field(min_length=1, max_length=64)
+    content: StrictStr = Field(min_length=2, max_length=2_000_000)
 
 
 class TaskParams(InstanceParams):
@@ -83,10 +91,22 @@ class StatisticsParams(InstanceParams):
 
 
 class StatisticsReportParams(InstanceParams):
-    category: Literal['resources', 'action', 'opsi', 'commission', 'ships', 'loot'] = 'resources'
+    category: Literal['resources', 'action', 'opsi', 'commission', 'ships', 'loot', 'research'] = 'resources'
     month: StrictStr | None = Field(default=None, pattern=r'^\d{4}-(0[1-9]|1[0-2])$')
     days: StrictInt = Field(default=7, ge=1, le=365)
     period: Literal['day', 'week', 'month'] = 'month'
+    # 科研统计专用：只看某一期，0 表示最新有记录的一期
+    series: StrictInt = Field(default=0, ge=0, le=20)
+
+
+class MeowfficerScoreReportParams(InstanceParams):
+    """指挥喵评分报告的只读查询。"""
+
+    limit: StrictInt = Field(default=100, ge=1, le=500)
+
+
+class MeowfficerClearReportParams(InstanceParams):
+    """清空指挥喵评分报告（删掉 json / md / html 三份产物）。"""
 
 
 class DeployParams(Params):
@@ -99,7 +119,8 @@ class CommitsParams(Params):
 
 
 class StartupParams(InstanceParams):
-    enabled: StrictBool
+    enabled: StrictBool | None = None
+    remember: StrictBool | None = None
 
 
 def response(request_id, result):

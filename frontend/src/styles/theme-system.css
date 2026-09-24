@@ -12,7 +12,7 @@
 :root {
   /* Typography */
   --theme-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --theme-font-mono: "Cascadia Code", "JetBrains Mono", "Consolas", "Microsoft YaHei", monospace;
+  --theme-font-mono: "JetBrains Mono", "JetBrains Mono NL", "Cascadia Code", "Consolas", "Microsoft YaHei", monospace;
 
   /* Core palette */
   --theme-bg: var(--bg);
@@ -79,7 +79,6 @@
   --theme-input-text: var(--text);
   --theme-input-border: var(--border);
   --theme-focus: var(--accent);
-  --theme-focus-ring: color-mix(in srgb, var(--accent) 20%, transparent);
   --theme-toggle-off: #bcbcc2;
   --theme-toggle-on: #34c759;
   --theme-toggle-knob: #fff;

@@ -12,7 +12,7 @@
   --syntax-key: var(--accent); --syntax-string: var(--secondary); --syntax-value: #854fa0;
   --syntax-comment: var(--muted); --syntax-punctuation: var(--text);
   --theme-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --theme-font-mono: "Cascadia Code", "Consolas", "Microsoft YaHei", monospace;
+  --theme-font-mono: "JetBrains Mono", "JetBrains Mono NL", "Cascadia Code", "Consolas", "Microsoft YaHei", monospace;
   --theme-bg: var(--bg); --theme-surface: var(--surface); --theme-surface-muted: var(--surface-muted);
   --theme-text: var(--text); --theme-muted: var(--muted); --theme-border: var(--border);
   --theme-accent: var(--accent); --theme-accent-hover: var(--accent-hover); --theme-accent-soft: var(--accent-soft);
@@ -23,7 +23,7 @@
   --theme-warning: #805a14; --theme-warning-soft: #faf0d6; --theme-info: var(--secondary);
   --theme-sidebar: var(--surface); --theme-glass: var(--surface); --theme-glass-edge: var(--border);
   --theme-glass-shadow: none; --theme-material-filter: none; --theme-chrome-filter: none;
-  --theme-popover-filter: none; --theme-overlay-filter: none; --theme-overlay: var(--bg);
+  --theme-popover-filter: none; --theme-overlay-filter: none; --theme-overlay: color-mix(in srgb, var(--bg) 30%, transparent);
   --theme-radius-control: 8px; --theme-radius-button: 8px; --theme-radius-panel: 14px;
   --theme-radius-card: 14px; --theme-radius-popover: 10px; --theme-radius-pill: 999px;
   --theme-shadow-panel: none; --theme-shadow-popover: none; --theme-shadow-modal: none;

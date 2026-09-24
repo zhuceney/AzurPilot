@@ -457,9 +457,32 @@
         "type": "checkbox",
         "value": false
       },
-      "SaveErrorCount": {
+      "SaveErrorRetentionDays": {
         "type": "input",
-        "value": 30
+        "value": 30,
+        "validate": [
+          0,
+          3650
+        ]
+      },
+      "SaveErrorBackUpMethod": {
+        "type": "select",
+        "value": "zip",
+        "option": [
+          "delete",
+          "zip",
+          "copy"
+        ]
+      },
+      "SaveErrorZipMethod": {
+        "type": "select",
+        "value": "zip",
+        "option": [
+          "bz2",
+          "gzip",
+          "xz",
+          "zip"
+        ]
       },
       "OnePushConfig": {
         "type": "textarea",
@@ -524,7 +547,7 @@
       },
       "LlmAnalysis": {
         "type": "checkbox",
-        "value": true
+        "value": false
       },
       "LlmApiKey": {
         "type": "textarea",
@@ -643,7 +666,7 @@
       },
       "CloseEmulatorDuringLongWait": {
         "type": "checkbox",
-        "value": true,
+        "value": false,
         "option": [
           true,
           false
@@ -696,6 +719,25 @@
         "validate": [
           0,
           3650
+        ]
+      },
+      "BackUpMethod": {
+        "type": "select",
+        "value": "zip",
+        "option": [
+          "delete",
+          "zip",
+          "copy"
+        ]
+      },
+      "ZipMethod": {
+        "type": "select",
+        "value": "zip",
+        "option": [
+          "bz2",
+          "gzip",
+          "xz",
+          "zip"
         ]
       },
       "AzurStatsID": {
@@ -2448,6 +2490,10 @@
       }
     },
     "GemsFarming": {
+      "EventFallbackStage": {
+        "type": "input",
+        "value": "2-4"
+      },
       "ChangeFlagship": {
         "type": "select",
         "value": "ship_equip",
@@ -2991,6 +3037,10 @@
       }
     },
     "GemsFarming": {
+      "EventFallbackStage": {
+        "type": "input",
+        "value": "2-4"
+      },
       "ChangeFlagship": {
         "type": "select",
         "value": "ship_equip",
@@ -3534,6 +3584,11 @@
       }
     },
     "GemsFarming": {
+      "EventFallbackStage": {
+        "type": "input",
+        "value": "0",
+        "display": "hide"
+      },
       "ChangeFlagship": {
         "type": "select",
         "value": "ship_equip",
@@ -4000,7 +4055,7 @@
       },
       "TimeLimit": {
         "type": "datetime",
-        "value": "2020-01-01 00:00:00",
+        "value": "2023-01-01 00:00:00",
         "validate": "datetime"
       }
     },
@@ -11421,6 +11476,18 @@
         "type": "checkbox",
         "value": true
       },
+      "ScoreTalents": {
+        "type": "checkbox",
+        "value": false
+      },
+      "ScoreThreshold": {
+        "type": "input",
+        "value": 0,
+        "validate": [
+          0,
+          100
+        ]
+      },
       "EnhanceIndex": {
         "type": "input",
         "value": 1
@@ -14420,7 +14487,8 @@
       },
       "TargetZone": {
         "type": "input",
-        "value": 0
+        "value": "0",
+        "mode": "text"
       },
       "StayInZone": {
         "type": "checkbox",
@@ -18705,6 +18773,75 @@
       "RemoteStopCommand": {
         "type": "input",
         "value": ""
+      }
+    },
+    "Storage": {
+      "Storage": {
+        "type": "storage",
+        "value": {},
+        "valuetype": "ignore",
+        "display": "disabled"
+      }
+    }
+  },
+  "MeowfficerScore": {
+    "MeowfficerScore": {
+      "Source": {
+        "type": "select",
+        "value": "screenshot",
+        "option": [
+          "screenshot",
+          "device",
+          "scan"
+        ]
+      },
+      "Folder": {
+        "type": "input",
+        "value": "./screenshots/meowfficer_talent"
+      },
+      "MaxImages": {
+        "type": "input",
+        "value": 50,
+        "validate": [
+          1,
+          999
+        ]
+      },
+      "ReportPath": {
+        "type": "input",
+        "value": "./log/meowfficer_score.md"
+      },
+      "DeviceShots": {
+        "type": "input",
+        "value": 1,
+        "validate": [
+          1,
+          99
+        ]
+      },
+      "DeviceInterval": {
+        "type": "input",
+        "value": 2,
+        "validate": [
+          0,
+          60
+        ]
+      },
+      "ScanLimit": {
+        "type": "input",
+        "value": 0,
+        "validate": [
+          0,
+          999
+        ]
+      },
+      "ScanPasses": {
+        "type": "input",
+        "value": 12,
+        "validate": [
+          1,
+          60
+        ]
       }
     },
     "Storage": {

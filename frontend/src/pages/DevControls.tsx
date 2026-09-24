@@ -1,12 +1,25 @@
-import { useState, type ReactNode } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
-import { ArrowRight, Bell, ChevronRight, CircleAlert, Code2, Database, Image, Layers3, Search, Server, Settings2, Sparkles, Terminal, Trash2, X } from 'lucide-react'
+import { useState, useSyncExternalStore, type ReactNode } from 'react'
+import { MarqueeText } from '../components/MarqueeText'
+import { useNavigate } from 'react-router-dom'
+import { ArrowRight, Bell, ChevronRight, CircleAlert, CirclePlay, Code2, Database, Gauge, Image, Layers3, RefreshCw, Search, Server, Settings2, Sparkles, Terminal, Trash2, Wrench, X } from 'lucide-react'
 import type { Value } from '../api/types'
 import { useApp } from '../app/context'
+import { usesMaterial } from '../app/theme'
+import { previewUpdate, simulateStatus, useDevOverride } from '../app/devOverride'
+import { readMotionPrefs, resetMotionPrefs, setMotionReduced, setMotionSpeed, setMotionStrength, subscribeMotionPrefs } from '../app/motionPrefs'
+import { replayLastPageTransition } from '../app/pageMotion'
 import { FieldInput } from '../components/FieldInput'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { GlassMaterial } from '../components/GlassMaterial'
 import { Empty, ErrorBox, Loading, Modal, PageTitle, StatusBadge } from '../components/ui'
+
+/* 模拟状态用的文案键；与实际状态值一一对应。 */
+const STATUS_LABELS = {running: 'status.running', stopped: 'status.stopped', error: 'status.error', updating: 'status.updating'} as const
+
+/* 故意抛异常，用来验证顶层 ErrorBoundary 的错误页。 */
+function CrashTest(): never {
+  throw new Error('DevControls crash test')
+}
 
 function DevField({id, label, help, multiline = false, children}: {id: string; label: string; help?: string; multiline?: boolean; children: ReactNode}) {
   return <div className={`field-row ${multiline ? 'field-row-multiline' : ''}`}>
@@ -16,7 +29,7 @@ function DevField({id, label, help, multiline = false, children}: {id: string; l
 }
 
 export function DevControls() {
-  const {devMode, setDevMode, notify, ui, theme} = useApp()
+  const {setDevMode, notify, ui, theme} = useApp()
   const navigate = useNavigate()
   const [text, setText] = useState('AzurPilot')
   const [number, setNumber] = useState(25548)
@@ -36,8 +49,11 @@ export function DevControls() {
   const [radius, setRadius] = useState(26)
   const [shadow, setShadow] = useState(24)
   const [demoTab, setDemoTab] = useState('resources')
-
-  if (!devMode) return <Navigate to="/" replace/>
+  const [throwing, setThrowing] = useState(false)
+  const override = useDevOverride()
+  const motionPrefs = useSyncExternalStore(subscribeMotionPrefs, readMotionPrefs)
+  const motionAvailable = theme !== 'minimal' && theme !== 'extreme'
+  const statusLabel = override.status ? ui(STATUS_LABELS[override.status]) : ''
 
   function disableDevMode() {
     setDevMode(false)
@@ -53,7 +69,34 @@ export function DevControls() {
       <span className="small-label">{ui('developer.only')}</span>
     </section>
 
-    {theme !== 'minimal' && <section className="panel config-group">
+    <section className="panel config-group dev-quick-tools">
+      <div className="panel-heading"><div><Wrench size={18}/><h2 aria-label={ui('developer.quickTools')} data-text={ui('developer.quickTools')}>{ui('developer.quickTools')}</h2></div><span className="small-label">{ui('developer.only')}</span></div>
+      <div className="dev-control-block">
+        <div className="dev-control-label"><strong>{ui('developer.simulateIcons')}</strong><span>{ui('developer.simulateIconsHint')}</span></div>
+        <div className="dev-button-row">
+          <button type="button" className="button secondary" onClick={() => simulateStatus('running')}><CirclePlay size={15}/>{ui('developer.simulateRunning')}</button>
+          <button type="button" className="button secondary" onClick={() => simulateStatus('error')}><CircleAlert size={15}/>{ui('developer.simulateError')}</button>
+          <button type="button" className="button secondary" onClick={() => simulateStatus('updating')}><RefreshCw size={15}/>{ui('developer.simulateUpdating')}</button>
+          <button type="button" className="button" disabled={!override.status} onClick={() => simulateStatus(null)}>{ui('developer.simulateClear')}</button>
+        </div>
+        <p className="dev-hint" role="status">{override.status ? ui('developer.simulating', {status: statusLabel}) : ui('developer.simulateIdleHint')}</p>
+      </div>
+      <div className="dev-control-block">
+        <div className="dev-control-label"><strong>{ui('developer.updateNotice')}</strong><span>{ui('developer.updateNoticeHint')}</span></div>
+        <div className="dev-button-row">
+          <button type="button" className="button secondary" aria-pressed={override.updatePreview} onClick={() => previewUpdate(!override.updatePreview)}><Bell size={15}/>{ui('developer.updateNoticeToggle')}</button>
+        </div>
+      </div>
+      <div className="dev-control-block">
+        <div className="dev-control-label"><strong>{ui('developer.throwTest')}</strong><span>{ui('developer.throwTestHint')}</span></div>
+        <div className="dev-button-row">
+          <button type="button" className="button danger subtle" onClick={() => setThrowing(true)}><CircleAlert size={15}/>{ui('developer.throwTest')}</button>
+        </div>
+      </div>
+    </section>
+    {throwing && <CrashTest/>}
+
+    {usesMaterial(theme) && <section className="panel config-group">
       <div className="panel-heading"><div><Sparkles size={18}/><h2 aria-label={ui('developer.visualLab')} data-text={ui('developer.visualLab')}>{ui('developer.visualLab')}</h2></div><span className="small-label">{ui('developer.liveTuning')}</span></div>
       <div className="dev-effect-lab">
         <div className="dev-effect-stage">
@@ -80,6 +123,32 @@ export function DevControls() {
         {[0, 6, 12, 18, 24, 32].map(value => <div key={value} className="dev-blur-preset-wrap"><div className="dev-blur-preset-bg"><div style={{backdropFilter: `blur(${value}px)`, WebkitBackdropFilter: `blur(${value}px)`}}>{ui('developer.blur')} {value}px</div></div><span>{value === 0 ? ui('developer.blurNone') : value <= 12 ? ui('developer.blurLight') : value <= 24 ? ui('developer.blurMedium') : ui('developer.blurHeavy')}</span></div>)}
       </div>
     </section>}
+
+    <section className="panel config-group">
+      <div className="panel-heading"><div><Gauge size={18}/><h2 aria-label={ui('developer.motionLab')} data-text={ui('developer.motionLab')}>{ui('developer.motionLab')}</h2></div><span className="small-label">{ui('developer.liveTuning')}</span></div>
+      <div className="dev-control-block">
+        <div className="dev-control-label"><strong>{ui('developer.motionSpeed')}</strong><span>{ui('developer.motionSpeedHint')}</span></div>
+        <div className="dev-button-row">
+          {([[1, '1×'], [2, '0.5×'], [4, '0.25×']] as const).map(([value, label]) => <button key={value} type="button" className="button secondary" disabled={!motionAvailable} aria-pressed={motionPrefs.speed === value} onClick={() => setMotionSpeed(value)}>{label}</button>)}
+        </div>
+      </div>
+      <div className="dev-control-block">
+        <div className="dev-control-label"><strong>{ui('developer.motionStrength')}</strong></div>
+        <div className="dev-button-row">
+          <button type="button" className="button secondary" disabled={!motionAvailable} aria-pressed={motionPrefs.strength === 'standard'} onClick={() => setMotionStrength('standard')}>{ui('developer.motionStandard')}</button>
+          <button type="button" className="button secondary" disabled={!motionAvailable} aria-pressed={motionPrefs.strength === 'strong'} onClick={() => setMotionStrength('strong')}>{ui('developer.motionStrong')}</button>
+        </div>
+      </div>
+      <div className="dev-control-block">
+        <div className="dev-control-label"><strong>{ui('developer.motionReduced')}</strong></div>
+        <div className="dev-button-row">
+          <button type="button" className="button secondary" aria-pressed={motionPrefs.reduced} onClick={() => setMotionReduced(!motionPrefs.reduced)}>{ui('developer.motionReducedToggle')}</button>
+          <button type="button" className="button secondary" disabled={!motionAvailable} onClick={() => replayLastPageTransition()}>{ui('developer.motionReplay')}</button>
+          <button type="button" className="button secondary" onClick={() => resetMotionPrefs()}>{ui('developer.motionReset')}</button>
+        </div>
+      </div>
+      <p className="dev-hint">{ui(motionAvailable ? 'developer.motionHint' : 'developer.motionUnavailable')}</p>
+    </section>
 
     <section className="panel config-group">
       <div className="panel-heading"><div><Layers3 size={18}/><h2 aria-label={ui('developer.layers')} data-text={ui('developer.layers')}>{ui('developer.layers')}</h2></div></div>
@@ -231,10 +300,10 @@ export function DevControls() {
             <a href="#dev-nav" className="active" onClick={event => event.preventDefault()}><Database size={18}/>{ui('developer.navCurrent')}<span className="nav-pill">DEV</span></a>
             <a href="#dev-nav" onClick={event => event.preventDefault()}><Settings2 size={18}/>{ui('developer.navHover')}</a>
           </nav>
-          <div className="task-group-button expanded"><Layers3 size={18} className="task-group-icon"/><span className="task-group-title">{ui('developer.taskGroup')}</span><ChevronRight size={13} className="task-group-arrow"/></div>
+          <div className="task-group-button expanded"><Layers3 size={18} className="task-group-icon"/><MarqueeText className="task-group-title" text={ui('developer.taskGroup')}/><ChevronRight size={13} className="task-group-arrow"/></div>
           <div className="task-submenu-list dev-submenu-list">
-            <a className="task-submenu-item active" href="#dev-sub" onClick={event => event.preventDefault()}><span className="task-submenu-dot"/><span className="task-submenu-item-text">{ui('developer.submenuCurrent')}</span></a>
-            <a className="task-submenu-item" href="#dev-sub" onClick={event => event.preventDefault()}><span className="task-submenu-dot"/><span className="task-submenu-item-text">{ui('developer.submenuNormal')}</span></a>
+            <a className="task-submenu-item active" href="#dev-sub" onClick={event => event.preventDefault()}><span className="task-submenu-dot"/><MarqueeText className="task-submenu-item-text" text={ui('developer.submenuCurrent')}/></a>
+            <a className="task-submenu-item" href="#dev-sub" onClick={event => event.preventDefault()}><span className="task-submenu-dot"/><MarqueeText className="task-submenu-item-text" text={ui('developer.submenuNormal')}/></a>
           </div>
         </div>
         <div className="dev-card-preview">
