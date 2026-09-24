@@ -4,8 +4,8 @@ from module.runtime.process_manager import ProcessManager
 from module.runtime.setting import State
 from module.runtime.task_handler import TaskHandler
 from module.ocr.rpc import stop_ocr_server_process
-from module.runtime.discord_presence import close_discord_rpc
 from module.runtime.remote_access import RemoteAccess
+from module.runtime.startup_memory import record_running
 
 task_handler = TaskHandler()
 
@@ -32,10 +32,12 @@ def clearup():
     with State.cleanup_lock:
         if State._clearup:
             return True
-        actions = [task_handler.stop, stop_ocr_server_process, close_discord_rpc, RemoteAccess.kill_ssh_process]
+        actions = [task_handler.stop, stop_ocr_server_process, RemoteAccess.kill_ssh_process]
         success = True
         try:
-            actions.extend(instance.stop for instance in ProcessManager.running_instances())
+            running = ProcessManager.running_instances()
+            actions.extend(instance.stop for instance in running)
+            record_running(instance.config_name for instance in running)
         except Exception:
             logger.exception('无法枚举运行进程，保留共享状态供父监督器回收')
             success = False

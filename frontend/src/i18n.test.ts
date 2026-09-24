@@ -13,8 +13,20 @@ describe('WebUI i18n', () => {
     expect(translateUi('en-US', 'instance.deletePrompt', {name: 'alas-main'})).toBe('Delete alas-main? Its configuration will remain in backup.')
   })
 
-  it('keeps the Miao locale complete through its Simplified Chinese base', () => {
-    expect(translateUi('zh-MIAO', 'nav.statistics')).toBe('资源统计')
+  it('offers a different delete-instance warning at each of the three confirmations', () => {
+    const prompts = ['instance.deletePrompt', 'instance.deletePrompt2', 'instance.deletePrompt3'] as const
+    for (const language of ['zh-CN', 'zh-TW', 'en-US', 'ja-JP', 'zh-MIAO'] as const) {
+      const texts = prompts.map(key => translateUi(language, key, {name: 'alas-main'}))
+      expect(new Set(texts).size).toBe(prompts.length)
+      /* 键不存在时 translateUi 会把键名原样返回，那样三条也「互不相同」，所以这里必须排除。 */
+      expect(texts.some(text => text.includes('instance.deletePrompt'))).toBe(false)
+    }
+  })
+
+  it('translates the Miao locale instead of falling back to Simplified Chinese', () => {
+    for (const key of ['nav.statistics', 'common.retry', 'dashboard.fitCards'] as const) {
+      expect(translateUi('zh-MIAO', key)).toContain('喵')
+    }
   })
 
   it('keeps Japanese and Traditional Chinese dictionaries complete for formerly missing UI keys', () => {
@@ -22,6 +34,14 @@ describe('WebUI i18n', () => {
     expect(translateUi('ja-JP', 'resource.Oil')).toBe('燃料')
     expect(translateUi('zh-TW', 'fleet.vanguard')).toBe('先鋒艦隊')
     expect(translateUi('zh-TW', 'stats.toolboxSave')).toBe('儲存圖表')
+    expect(translateUi('zh-TW', 'stats.axisMode')).toBe('座標軸')
+    expect(translateUi('ja-JP', 'stats.axisMode')).toBe('軸モード')
+    expect(translateUi('en-US', 'stats.axisMode')).toBe('Axis mode')
+    expect(translateUi('zh-CN', 'stats.axisMode')).toBe('坐标轴')
+    expect(translateUi('zh-TW', 'stats.candlestickOverlay')).toBe('K 線 + 折線疊加')
+    expect(translateUi('ja-JP', 'stats.candlestickOverlay')).toBe('ローソク足 + 折れ線')
+    expect(translateUi('en-US', 'stats.candlestickOverlay')).toBe('Candlestick + line overlay')
+    expect(translateUi('zh-CN', 'stats.candlestickOverlay')).toBe('K 线 + 折线叠加')
   })
 
   it('translates the advanced-mode script prerequisite in every UI language', () => {
