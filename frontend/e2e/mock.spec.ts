@@ -69,7 +69,7 @@ test('总览三态、资源搭配记忆、日志与被动截图切换', async ({
   await expect(actionPoint.locator('.resource-heading')).toHaveText('行动力')
   await expect(actionPoint.locator('.resource-value')).toHaveText('101/ 5,301')
   await expect(actionPoint.locator('.resource-value small')).toHaveText('/ 5,301')
-  await expect(actionPoint.locator('.resource-icon-image')).toHaveAttribute('src', /dog\.webp/)
+  await expect(actionPoint.locator('.resource-icon-image')).toHaveAttribute('src', /guild_coin\.webp/)
   await page.reload()
   await expect(page.locator('.resource-card')).toHaveCount(5)
   await page.getByRole('button', {name: '启动调度器', exact: true}).click()
@@ -357,9 +357,9 @@ test('统计分类、K 线、时间过滤、表格导出与移动端布局', asy
   const tabs = page.getByRole('tablist', {name: '统计分类'})
   await tabs.getByRole('tab', {name: '资源趋势', exact: true}).focus()
   await page.keyboard.press('End')
-  await expect(tabs.getByRole('tab', {name: '短猫掉落', exact: true})).toBeFocused()
-  await expect(tabs.getByRole('tab', {name: '短猫掉落', exact: true})).toHaveAttribute('aria-selected', 'true')
-  await expect(page.locator('.period-controls strong')).toHaveText('短猫掉落')
+  await expect(tabs.getByRole('tab', {name: '科研掉落', exact: true})).toBeFocused()
+  await expect(tabs.getByRole('tab', {name: '科研掉落', exact: true})).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('.period-controls strong')).toHaveText('科研掉落')
   await expect.poll(() => tabs.evaluate(control => {
     const active = control.querySelector('[aria-selected="true"]')!.getBoundingClientRect()
     const indicator = control.querySelector('.segmented-indicator')!.getBoundingClientRect()
@@ -760,6 +760,30 @@ test('Logo 旁更新提示、完整提交分页、获取和应用更新', async 
   await page.getByRole('option', {name: '深色', exact: true}).click()
   await page.goto('/#/updater')
   await page.screenshot({path: 'test-results/updater-dark.png'})
+})
+
+test('SHA 不匹配警告与更新确认弹窗', async ({page}) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  // mock 服务切到分叉场景：本地 HEAD 不在更新源历史上，模拟镜像重写历史后的 SHA 分离。
+  await fetch('http://127.0.0.1:22492/__mock/updater?mode=diverged')
+  await page.goto('/#/updater')
+  await expect(page.locator('.mismatch-note')).toContainText('SHA 不匹配')
+  await page.getByRole('button', {name: '更新', exact: true}).click()
+  await expect(page.locator('.modal h2')).toHaveText('SHA 不匹配')
+  await expect(page.locator('.modal')).toContainText('GitCode')
+  // 取消不更新：弹窗关闭且状态保持有更新可用。
+  await page.locator('.modal').getByRole('button', {name: '取消', exact: true}).click()
+  await expect(page.locator('.modal')).toHaveCount(0)
+  await expect(page.locator('.update-summary')).toContainText('新版本可用')
+  // 确认更新：本地对齐到更新源历史，状态回到已是最新。
+  await page.getByRole('button', {name: '更新', exact: true}).click()
+  await page.locator('.modal').getByRole('button', {name: '仍然更新'}).click()
+  await expect(page.locator('.modal')).toHaveCount(0)
+  await expect(page.locator('.update-summary')).toContainText('已是最新')
+  await expect(page.locator('.mismatch-note')).toHaveCount(0)
+  expect(errors).toEqual([])
+  await fetch('http://127.0.0.1:22492/__mock/updater?mode=default')
 })
 
 test('指挥喵评分报告面板展示、刷新与空状态', async ({page}) => {
