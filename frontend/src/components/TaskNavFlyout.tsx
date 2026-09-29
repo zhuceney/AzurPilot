@@ -1,3 +1,7 @@
+/**
+ * @fileoverview 侧边栏悬停二级弹出任务菜单组件。
+ */
+
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { MarqueeText } from './MarqueeText'
 import { createPortal } from 'react-dom'
@@ -19,7 +23,7 @@ export function isDesktopDevice(): boolean {
   return isWide && hasFinePointer
 }
 
-export function TaskNavFlyout({ defaultOpenKey }: { defaultOpenKey?: string } = {}) {
+export function TaskNavFlyout({ defaultOpenKey, onNavigate }: { defaultOpenKey?: string; onNavigate?: () => void } = {}) {
   const { schema, t, ui } = useApp()
   const { instance } = useParams()
   const location = useLocation()
@@ -272,6 +276,7 @@ export function TaskNavFlyout({ defaultOpenKey }: { defaultOpenKey?: string } = 
                 onClick={() => {
                   clearCloseTimer()
                   setOpenMenuKey(null)
+                  onNavigate?.()
                 }}
                 role="menuitem"
               >

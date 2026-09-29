@@ -59,6 +59,16 @@ class Cl1Database:
     def get_siren_research_device_count(
         self, data: dict, source: str = "cl1", hazard_level: int = None
     ) -> int:
+        """从统计数据字典中提取塞壬研究装置出现次数。
+
+        Args:
+            data (dict): 月度统计数据。
+            source (str): 统计来源（'cl1' 或 'meow'）。默认为 'cl1'。
+            hazard_level (int, optional): 侵蚀等级（仅当 source='meow' 时有效）。
+
+        Returns:
+            int: 记录的研究装置数量。
+        """
         devices = self._normalize_siren_research_devices(data)
         if source == "meow":
             if hazard_level is None:
@@ -995,13 +1005,13 @@ class Cl1Database:
         if not old_db_dir.exists():
             return
 
-        # logger.info(f"Scanning for legacy CL1 data in {old_db_dir}...")
+        # logger.info(f"在 {old_db_dir} 中扫描旧版 CL1 数据...")
         try:
             for instance_dir in old_db_dir.iterdir():
                 if instance_dir.is_dir():
                     json_file = instance_dir / "cl1_monthly.json"
                     if json_file.exists():
-                        # logger.info(f"Found legacy data for instance: {instance_dir.name}")
+                        # logger.info(f"发现实例旧数据: {instance_dir.name}")
                         self.migrate_from_json(json_file, instance_dir.name)
         except Exception as e:
             logger.error(f"[统计-数据库] 自动迁移扫描错误: {e}")
@@ -1371,21 +1381,25 @@ class Cl1Database:
         return result
 
     def async_get_stats(self, instance: str, month: str):
+        """异步获取指定月份的 CL1 统计数据。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(self.get_stats, instance, month)
 
     def async_save_stats(self, instance: str, month: str, data: Dict[str, Any]):
+        """异步保存指定月份的 CL1 统计数据。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(self.save_stats, instance, month, data)
 
     def async_increment_battle_count(self, instance: str, delta: int = 1):
+        """异步增加战斗场次计数。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(self.increment_battle_count, instance, delta)
 
     def async_increment_akashi_encounter(self, instance: str):
+        """异步增加明石遭遇次数。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(self.increment_akashi_encounter, instance)
@@ -1393,6 +1407,7 @@ class Cl1Database:
     def async_add_akashi_ap_entry(
         self, instance: str, amount: int, base: int, count: int, source: str
     ):
+        """异步记录明石购买行动力条目。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1402,11 +1417,13 @@ class Cl1Database:
     def async_add_ap_snapshot(
         self, instance: str, ap_current: int, source: str = "cl1", distance: int = None, ap_total: int = None
     ):
+        """异步添加行动力快照。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(self.add_ap_snapshot, instance, ap_current, source, distance, ap_total)
 
     def async_set_last_ap_notification(self, instance: str, ap_current: int):
+        """异步记录最近一次行动力通知值。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1416,6 +1433,7 @@ class Cl1Database:
     def async_add_yellow_coin_snapshot(
         self, instance: str, yellow_coin: int, source: str = "dashboard"
     ):
+        """异步记录代币快照。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1425,6 +1443,7 @@ class Cl1Database:
     def async_increment_meow_battle_count(
         self, instance: str, hazard_level: int = None, delta: float = None
     ):
+        """异步增加短猫相接战斗场次计数。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1434,6 +1453,7 @@ class Cl1Database:
     def async_add_meow_round_time(
         self, instance: str, duration: float, hazard_level: int = None
     ):
+        """异步记录短猫相接单轮耗时。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1443,6 +1463,7 @@ class Cl1Database:
     def async_add_meow_battle_time(
         self, instance: str, duration: float, hazard_level: int = None
     ):
+        """异步记录短猫相接战斗耗时。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1450,6 +1471,7 @@ class Cl1Database:
         )
 
     def async_get_meow_stats(self, instance: str, year: int = None, month: int = None, hazard_level: int = None):
+        """异步获取短猫相接月度统计。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(self.get_meow_stats, instance, year, month, hazard_level)
@@ -1457,6 +1479,7 @@ class Cl1Database:
     def async_add_siren_research_device(
         self, instance: str, source: str = "cl1", hazard_level: int = None
     ):
+        """异步记录塞壬研究装置出现。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1464,6 +1487,7 @@ class Cl1Database:
         )
 
     def async_increment_meow_akashi_encounter(self, instance: str, hazard_level: int):
+        """异步增加短猫相接明石遭遇计数。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1471,6 +1495,7 @@ class Cl1Database:
         )
 
     def async_add_meow_akashi_ap(self, instance: str, hazard_level: int, amount: int):
+        """异步记录短猫相接明石行动力购买。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -1705,6 +1730,7 @@ class Cl1Database:
         *,
         imgid: str = '',
         completed_at: Optional[datetime] = None,
+        ts: Optional[datetime] = None,
     ) -> Optional[Dict[str, Any]]:
         """记录一次科研领奖的掉落。
 
@@ -1717,7 +1743,9 @@ class Cl1Database:
             series (int): 科研期数；未识别时传 0。
             items (Dict[str, int]): {物品模板名: 数量}。
             imgid (str): 掉落记录文件名，用于去重。
-            completed_at (Optional[datetime]): 领奖时间，缺省取当前时间。
+            completed_at (Optional[datetime]): 领奖时间，缺省取记录时间。
+            ts (Optional[datetime]): 记录时间，同时决定写进哪个月份分区；缺省取当前时间。
+                导入历史截图时传截图时间，否则「今日/本月」会落在导入那天。
 
         Returns:
             Optional[Dict[str, Any]]: 写入的条目；重复或空掉落返回 None。
@@ -1726,11 +1754,11 @@ class Cl1Database:
         if not items:
             return None
 
-        now = datetime.now()
-        month = f"{now.year:04d}-{now.month:02d}"
+        stamp = ts or datetime.now()
+        month = f"{stamp.year:04d}-{stamp.month:02d}"
         entry = {
-            "ts": now.isoformat(),
-            "completed_at": (completed_at or now).isoformat(),
+            "ts": stamp.isoformat(),
+            "completed_at": (completed_at or stamp).isoformat(),
             "imgid": str(imgid or ''),
             "project": str(project or ''),
             "series": self._coerce_int(series or 0),
@@ -1749,6 +1777,45 @@ class Cl1Database:
             data["research_drop_entries"] = entries[-5000:]
             self._save_stats_in_connection(conn, instance, month, data)
         return entry
+
+    def update_research_drop_items(
+        self, instance: str, imgid: str, items: Dict[str, int]
+    ) -> Optional[Dict[str, Any]]:
+        """按 imgid 就地改写一条科研掉落记录的掉落物。
+
+        只服务模板改名后的数据订正：库里存的是**模板文件名**，显示时再拿名称表翻译，
+        模板一改名，老记录就会照新表张冠李戴（实测把「四联装610mm鱼雷」显示成八期的
+        彩装主炮）。改名映射救不了这种错——旧名一条就同时盖住了两件不同的装备，
+        所以只能拿原截图重解析后覆盖。见 dev_tools/research_drop_repair.py。
+
+        只覆盖 items，不动期数与项目代号：期数来自卡片角标识别，和模板名无关，
+        重解析若读不出角标会得到 0，覆盖它反而会毁掉已有数据。
+
+        Args:
+            instance (str): ALAS 实例名。
+            imgid (str): 掉落记录文件名；一条掉落在库里按它唯一。
+            items (Dict[str, int]): 新的 {物品模板名: 数量}。
+
+        Returns:
+            Optional[Dict[str, Any]]: 更新后的条目；未找到或参数为空时返回 None。
+        """
+        items = {k: self._coerce_int(v) for k, v in (items or {}).items() if v > 0}
+        if not imgid or not items:
+            return None
+
+        # 月份分区先取好再开事务：事务里不能再开第二个连接去查列表
+        months = [month for _, month in self._list_stats_rows(instance)]
+        with self._stats_transaction() as conn:
+            for month in months:
+                data = self._get_stats_in_connection(conn, instance, month)
+                entries = data.get("research_drop_entries") or []
+                for entry in entries:
+                    if entry.get("imgid") != imgid:
+                        continue
+                    entry["items"] = items
+                    self._save_stats_in_connection(conn, instance, month, data)
+                    return dict(entry)
+        return None
 
     def get_research_drop(
         self, instance: str, year: int = None, month: int = None
@@ -2039,6 +2106,7 @@ class Cl1Database:
         commission_count: int = 1,
         screenshots: Optional[List[str]] = None,
     ):
+        """异步记录委托收益。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(
@@ -2048,6 +2116,7 @@ class Cl1Database:
     def async_get_commission_income(
         self, instance: str, year: int = None, month: int = None
     ):
+        """异步获取委托收益统计。"""
         from module.base.async_executor import async_executor
 
         return async_executor.submit(self.get_commission_income, instance, year, month)

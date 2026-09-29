@@ -1,3 +1,7 @@
+/**
+ * @fileoverview 旧版侧边栏树状展开任务列表组件。
+ */
+
 import { useState } from 'react'
 import { MarqueeText } from './MarqueeText'
 import { NavLink, useLocation, useParams } from 'react-router-dom'
@@ -15,7 +19,7 @@ const groupIcons: Record<string, LucideIcon> = {
  * 展开状态只记「用户点开过的分组」；当前任务所在的分组始终展开，
  * 搜索时命中的分组也一律展开，清空搜索后回到用户自己的展开选择。
  */
-export function TaskNavTree({ defaultOpenKey }: { defaultOpenKey?: string } = {}) {
+export function TaskNavTree({ defaultOpenKey, onNavigate }: { defaultOpenKey?: string; onNavigate?: () => void } = {}) {
   const { schema, t, ui } = useApp()
   const { instance } = useParams()
   const location = useLocation()
@@ -96,6 +100,7 @@ export function TaskNavTree({ defaultOpenKey }: { defaultOpenKey?: string } = {}
                         className={({ isActive }) =>
                           ['task-submenu-item', isActive && 'active'].filter(Boolean).join(' ')
                         }
+                        onClick={onNavigate}
                       >
                         <span className="task-submenu-dot" />
                         <MarqueeText className="task-submenu-item-text" text={t(`Task.${task}.name`)}/>
