@@ -6,6 +6,8 @@
 
 from typing import Any, Literal
 
+from module.scheduler.models import Mode, ProgramDocument
+
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
 VERSION = 1
@@ -61,6 +63,11 @@ class SchemaParams(Params):
     language: Literal['zh-CN', 'zh-MIAO', 'en-US', 'ja-JP', 'zh-TW'] = 'zh-CN'
 
 
+class SearchContentParams(Params):
+    """侧栏内容检索请求参数模型。"""
+    query: StrictStr = Field(min_length=1, max_length=64)
+
+
 class BackgroundUrlParams(Params):
     url: StrictStr = Field(min_length=8, max_length=2048)
 
@@ -76,6 +83,20 @@ class BackgroundGalleryRemoveParams(Params):
 class InstanceParams(Params):
     """单实例操作通用入参模型。"""
     instance: StrictStr = Field(min_length=1, max_length=64)
+
+
+class StockRequestParams(InstanceParams):
+    """实例专属交易请求；实例身份和远端凭据由后端补充。"""
+    path: StrictStr = Field(min_length=1, max_length=100)
+    method: Literal['GET', 'POST', 'DELETE'] = 'GET'
+    body: dict[str, Any] | None = None
+    etag: StrictStr = Field(default='', max_length=128)
+
+
+class StockRebuildParams(InstanceParams):
+    """先返回实际重建范围，用户确认后才重建本地交易账户。"""
+    confirm: StrictBool = False
+    scope: Literal['instance', 'all'] = 'instance'
 
 
 class CreateParams(Params):
@@ -104,6 +125,35 @@ class ShopStrategyValidateParams(InstanceParams):
     script: StrictStr = Field(max_length=20000)
 
 
+class ProgramValidateParams(InstanceParams):
+    """调度程序草稿的校验请求。"""
+
+    document: ProgramDocument
+    mode: Mode = 'takeover'
+
+
+class ProgramSaveParams(InstanceParams):
+    """按修订号保存调度程序草稿。"""
+
+    document: ProgramDocument
+    revision: StrictStr
+
+
+class ProgramApplyParams(InstanceParams):
+    """把草稿应用到运行中的调度器。"""
+
+    revision: StrictStr
+    mode: Mode
+
+
+class ProgramSimulateParams(ProgramValidateParams):
+    """带模拟上下文与步数上限的试运行请求。"""
+
+    context: dict[str, Any] = Field(default_factory=dict)
+    outcomes: list[Literal['completed', 'yielded', 'recoverable', 'failed']] = Field(default_factory=list, max_length=1000)
+    steps: StrictInt = Field(default=100, ge=1, le=1000)
+
+
 class ConfigChange(Params):
     """单个配置项修改条目模型。"""
     path: StrictStr = Field(min_length=1, max_length=180)
@@ -124,7 +174,7 @@ class RevisionParams(InstanceParams):
 class SubscribeParams(Params):
     """WebSocket 主题订阅请求参数模型。"""
     instance: StrictStr | None = None
-    topics: list[Literal['instances', 'overview', 'logs', 'preview']] = Field(max_length=4)
+    topics: list[Literal['instances', 'overview', 'logs', 'preview', 'stock']] = Field(max_length=5)
 
 
 class LogsParams(InstanceParams):
@@ -140,7 +190,7 @@ class StatisticsParams(InstanceParams):
 
 class StatisticsReportParams(InstanceParams):
     """综合统计报表请求参数模型。"""
-    category: Literal['resources', 'action', 'opsi', 'commission', 'ships', 'loot', 'research'] = 'resources'
+    category: Literal['resources', 'action', 'opsi', 'commission', 'ships', 'loot', 'research', 'storage'] = 'resources'
     month: StrictStr | None = Field(default=None, pattern=r'^\d{4}-(0[1-9]|1[0-2])$')
     days: StrictInt = Field(default=7, ge=1, le=365)
     period: Literal['day', 'week', 'month'] = 'month'
