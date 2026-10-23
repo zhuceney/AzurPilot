@@ -1,6 +1,6 @@
 import sys
 from typing import Optional, Union
-
+import random
 from deploy.geo import get_country_code
 from deploy.config_transaction import DeployConfigTransaction
 from deploy.logger import logger
@@ -8,8 +8,12 @@ from deploy.utils import *
 
 
 GIT_OVER_CDN_REPOSITORY = 'git://git.pull/AzurPilot'
-GIT_OVER_CDN_FALLBACK_REPOSITORY = 'https://gitcode.com/ddl2/AzurLaneAutoScript'
-GITHUB_REPOSITORY = 'https://github.com/wess09/AzurPilot'
+GIT_OVER_CDN_FALLBACK_REPOSITORIES = [
+    'https://cnb.cool/AzurPilot/AzurPilot',
+    'https://gitcode.com/ddl2/AzurPilot',
+]
+GIT_OVER_CDN_FALLBACK_REPOSITORY = 'https://gitcode.com/ddl2/AzurPilot'
+GITHUB_REPOSITORY = 'https://github.com/zhuceney/AzurPilot'
 
 
 class ExecutionError(Exception):
