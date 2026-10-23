@@ -17,6 +17,13 @@
 
 全局 logger 实例通过 monkey-patch 方式扩展了上述方法，作为整个框架的
 统一日志入口。
+
+日志级别策略（本文件修改）：
+    - 文件 handler: 记录全部 INFO 及以上，日志文件保持完整。
+    - 控制台 handler: 只显示 HR_LEVEL(25) 和 WARNING 及以上，减少刷屏。
+    - WebUI handler: 同控制台，只显示 HR_LEVEL(25) 和 WARNING 及以上。
+    - hr() 使用自定义级别 25，因此分节标题在终端/WebUI 上仍可见，
+      但普通 logger.info() 会被过滤掉。
 """
 
 import datetime
@@ -59,6 +66,22 @@ logging.raiseExceptions = True  # 设为 True 可在控制台看到编码错误
 
 # 移除 HTTP 关键字（GET、POST 等）避免日志高亮误判
 RichHandler.KEYWORDS = []
+
+
+# >>> 修改：自定义 hr 级别与过滤逻辑 <<<
+HR_LEVEL = 25  # INFO(20) 与 WARNING(30) 之间，仅用于分节标题
+
+
+class _MinLevelFilter(logging.Filter):
+    """只放行指定级别及以上的日志记录。"""
+
+    def __init__(self, level: int):
+        super().__init__()
+        self.level = level
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno >= self.level
+# >>> 修改结束 <<<
 
 
 class RichFileHandler(RichHandler):
@@ -444,6 +467,9 @@ console_hdlr = RichHandler(
     tracebacks_extra_lines=3,
 )
 console_hdlr.setFormatter(console_formatter)
+# >>> 修改：控制台只显示 HR_LEVEL 和 WARNING 及以上 <<<
+console_hdlr.addFilter(_MinLevelFilter(HR_LEVEL))
+# >>> 修改结束 <<<
 logger.addHandler(console_hdlr)
 
 # 确保运行在 AzurPilot 根目录下
@@ -569,6 +595,9 @@ def set_func_logger(func):
         highlighter=Highlighter(),
     )
     hdlr.setFormatter(web_formatter)
+    # >>> 修改：WebUI 只显示 HR_LEVEL 和 WARNING 及以上 <<<
+    hdlr.addFilter(_MinLevelFilter(HR_LEVEL))
+    # >>> 修改结束 <<<
     logger.handlers = [h for h in logger.handlers if not isinstance(
         h, RichRenderableHandler)]
     logger.addHandler(hdlr)
@@ -648,6 +677,9 @@ def rule(title="", *, characters="─", style="rule.line", end="\n", align="cent
 def hr(title, level=3):
     """分节标题输出（支持 4 级标题）。
 
+    使用自定义级别 HR_LEVEL(25) 输出，使其能在终端/WebUI 的
+    WARNING 过滤器中存活，而普通 logger.info() 会被过滤。
+
     Args:
         title: 标题内容。
         level (int, optional): 标题级别（0~3）。默认为 3。
@@ -655,12 +687,12 @@ def hr(title, level=3):
     title = str(title).upper()
     if level == 1:
         logger.rule(title, characters='═')
-        logger.info(title)
+        logger.log(HR_LEVEL, title)
     if level == 2:
         logger.rule(title, characters='─')
-        logger.info(title)
+        logger.log(HR_LEVEL, title)
     if level == 3:
-        logger.info(f"[bold]<<< {title} >>>[/bold]", extra={"markup": True})
+        logger.log(HR_LEVEL, f"[bold]<<< {title} >>>[/bold]", extra={"markup": True})
     if level == 0:
         logger.rule(characters='═')
         logger.rule(title, characters=' ')
