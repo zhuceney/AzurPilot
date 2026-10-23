@@ -8,7 +8,8 @@ name: CI
 # 触发条件与职责不同（tags 发布、master 镜像、issues 自动化），保持独立，
 # 不并入本工作流。
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 concurrency:
   # 同一分支/PR 上避免并发重复运行。
