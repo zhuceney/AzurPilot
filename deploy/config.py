@@ -1,3 +1,4 @@
+
 import sys
 from typing import Optional, Union
 
@@ -8,8 +9,10 @@ from deploy.utils import *
 
 
 GIT_OVER_CDN_REPOSITORY = 'git://git.pull/AzurPilot'
-GIT_OVER_CDN_FALLBACK_REPOSITORY = 'https://gitcode.com/ddl2/AzurLaneAutoScript'
+
+GIT_OVER_CDN_FALLBACK_REPOSITORY = 'https://gitcode.com/ddl2/AzurPilot'
 GITHUB_REPOSITORY = 'https://github.com/zhuceney/AzurPilot'
+
 
 
 class ExecutionError(Exception):
@@ -53,6 +56,8 @@ class ConfigModel:
     # 远程访问
     EnableRemoteAccess: bool = False
     RemoteAccessMode: str = "auto"
+    CloudflareRegistry: str = "https://remote.azurpilot.com"
+    CloudflareDeviceId: str = ""
     SSHUser: Optional[str] = None
     SSHServer: Optional[str] = None
     SSHExecutable: Optional[str] = None
@@ -126,7 +131,6 @@ class DeployConfig(DeployConfigTransaction, ConfigModel):
             'https://e.coding.net/saarcenter/alas/AzurLaneAutoScript.git',
             'https://git.saarcenter.com/LmeSzinc/AzurLaneAutoScript.git',
             'git://git.lyoko.io/AzurLaneAutoScript',
-            'https://gitcode.com/ddl2/AzurLaneAutoScript',
             'https://gitcode.com/ZhangMusan/AzurLaneAutoScript',
             'https://gitcode.com/nerom/AzurLaneAutoScript',
             'https://gitee.com/wqeaxc/AzurLaneAutoScript1',
@@ -145,14 +149,16 @@ class DeployConfig(DeployConfigTransaction, ConfigModel):
         # 绕过 webui.config.DeployConfig.__setattr__()，不写入 deploy.yaml
         super().__setattr__(
             'GitOverCdn',
-            self.Repository == GIT_OVER_CDN_REPOSITORY and self.Branch == 'master'
+            self.Repository in ['cn', GIT_OVER_CDN_REPOSITORY] and self.Branch == 'master'
         )
-        if self.Repository == GIT_OVER_CDN_REPOSITORY:
-            super().__setattr__('Repository', GIT_OVER_CDN_FALLBACK_REPOSITORY)
         if self.Repository in ['global']:
             super().__setattr__('Repository', 'https://github.com/wess09/AzurPilot')
-        if self.Repository in ['cn']:
-            super().__setattr__('Repository', GIT_OVER_CDN_REPOSITORY)
+        if self.Repository in ['cn', GIT_OVER_CDN_REPOSITORY]:
+            super().__setattr__('Repository', choose_fallback_repository())
+        if self.Repository in ['cnb']:
+            super().__setattr__('Repository', GIT_OVER_CDN_FALLBACK_REPOSITORIES[0])
+        if self.Repository in ['gitcode']:
+            super().__setattr__('Repository', GIT_OVER_CDN_FALLBACK_REPOSITORIES[1])
 
     def _redirect_github_repository(self):
         """为官方 GitHub 源一次性选择适合当前网络的更新镜像。"""

@@ -15,8 +15,8 @@ import numpy as np
 from module.base.utils import load_image
 from module.exception import StorageStatisticsError
 from module.statistics.storage_snapshot import get_storage_timeline, latest_snapshot, save_snapshot
-from module.storage.statistics_recognition import (StorageCard, StorageCatalog, StorageRecognitionError,
-    StorageTraversal, detect_rows, recognize_rows, same_card, same_row)
+from module.storage.statistics_recognition import (StorageCard, StorageCatalog, StorageItemRecognitionError,
+    StorageRecognitionError, StorageTraversal, detect_rows, recognize_rows, same_card, same_row, verify_targets)
 
 FIXTURES = Path(__file__).parent / 'fixtures/storage_statistics'
 
@@ -143,6 +143,51 @@ class RecognitionTests(unittest.TestCase):
         with self.assertRaises(StorageRecognitionError):
             self.catalog.read_amount(icon)
 
+    def test_broken_amount_skips_only_its_card_and_still_verifies_later_items(self):
+        image = self.images[3].copy()
+        card = detect_rows(image)[0][0]
+        x0, y0, _, _ = card.area
+        image[y0 + 99:y0 + 126, x0 + 25:x0 + 127] = (255, 255, 255)
+        rows = recognize_rows(image, self.catalog, target_only=True)
+        self.assertEqual(rows[0][0].identifier, 'GearDesignPlanGunT4')
+        self.assertIsNone(rows[0][0].amount)
+        self.assertIsNotNone(rows[0][0].error)
+        rows = verify_targets(detect_rows(image), rows, self.catalog)
+        quantities = {item['id']: item['amount'] for item in self.catalog.snapshot_items(rows)}
+        self.assertIsNone(quantities['GearDesignPlanGunT4'])
+        self.assertEqual(quantities['GearDesignPlanTorpedoT4'], 859)
+        self.assertEqual(quantities['SecretDesignPlanT4'], 767)
+
+    def test_ambiguous_identity_continues_without_counting_its_candidates(self):
+        image = self.images[3]
+        scores = self.catalog._scores
+
+        def ambiguous(icon, context=None, identifier=None):
+            result = scores(icon, context, identifier)
+            if result and identifier is None and max(result, key=result.get) == 'GearDesignPlanGunT4':
+                return {'GearDesignPlanGunT4': .91, 'GearDesignPlanTorpedoT4': .90}
+            return result
+
+        with patch.object(self.catalog, '_scores', side_effect=ambiguous):
+            rows = recognize_rows(image, self.catalog, target_only=True)
+        self.assertIsNone(rows[0][0].identifier)
+        self.assertIsNotNone(rows[0][0].error)
+        quantities = {item['id']: item['amount'] for item in self.catalog.snapshot_items(rows)}
+        self.assertIsNone(quantities['GearDesignPlanGunT4'])
+        self.assertIsNone(quantities['GearDesignPlanTorpedoT4'])
+        self.assertEqual(quantities['SecretDesignPlanT4'], 767)
+
+    def test_missing_number_templates_are_fatal_instead_of_skipping_every_item(self):
+        with patch.object(self.catalog, 'read_amount', side_effect=StorageRecognitionError('仓库数字模板缺失')):
+            with self.assertRaisesRegex(StorageRecognitionError, '仓库数字模板缺失'):
+                recognize_rows(self.images[3], self.catalog, target_only=True)
+
+    def test_failed_duplicate_stack_does_not_save_a_partial_total(self):
+        card = recognize_rows(self.images[3], self.catalog, target_only=True)[0][0]
+        unread = StorageCard(card.area, card.image, identifier=card.identifier)
+        quantities = {item['id']: item['amount'] for item in self.catalog.snapshot_items([[card, unread]])}
+        self.assertIsNone(quantities[card.identifier])
+
     def test_untrained_quantities_and_repeated_digits_from_other_items(self):
         rows = detect_rows(self.images[1])
         for row, column, amount in [(0, 0, 215), (0, 2, 143), (0, 5, 142),
@@ -200,7 +245,7 @@ class RecognitionTests(unittest.TestCase):
 class SnapshotTests(unittest.TestCase):
     def setUp(self):
         self.temp = self.enterContext(tempfile.TemporaryDirectory())
-        self.path = Path(self.temp) / 'config/storage_statistics.db'
+        self.path = Path(self.temp) / 'config/azurpilot.db'
         self.items = [dict(id='chips', name='心智单元', group='材料', amount=13393),
                       dict(id='absent', name='未发现物品', group='材料', amount=None)]
 
@@ -260,7 +305,7 @@ class SnapshotTests(unittest.TestCase):
         items[7]['amount'] = None
         self.save(items=items)
         before = self.path.read_bytes()
-        configs = SimpleNamespace(path=Mock(return_value=self.path.parent / 'alpha.json'))
+        configs = SimpleNamespace(directory=self.path.parent, path=Mock(return_value=self.path.parent / 'alpha.json'))
         result = report(configs, 'alpha', 'storage', None, 7, 'month')
         chips = next(item for item in result['series'] if item['key'] == 'CognitiveChips')
         absent = next(item for item in result['series'] if item['key'] == 'CognitiveChipsII')
@@ -285,7 +330,7 @@ class SnapshotTests(unittest.TestCase):
                                           (third, '2026-03-02 00:00:00')):
                 connection.execute('UPDATE storage_scans SET finished_at=? WHERE id=?', (timestamp, identifier))
 
-        configs = SimpleNamespace(path=Mock(return_value=self.path.parent / 'alpha.json'))
+        configs = SimpleNamespace(directory=self.path.parent, path=Mock(return_value=self.path.parent / 'alpha.json'))
         result = report(configs, 'alpha', 'storage', '2026-01', 7, 'month')
         chips = next(item for item in result['series'] if item['key'] == base[0]['id'])
 
@@ -304,7 +349,7 @@ class SnapshotTests(unittest.TestCase):
 
     def test_report_only_reads_saved_counts(self):
         from module.api.statistics_service import report
-        configs = SimpleNamespace(path=Mock(return_value=self.path.parent / 'alpha.json'))
+        configs = SimpleNamespace(directory=self.path.parent, path=Mock(return_value=self.path.parent / 'alpha.json'))
         first = report(configs, 'alpha', 'storage', None, 7, 'month')
         self.assertTrue(all(row[3] is None for row in first['tables'][0]['rows']))
         self.assertFalse(self.path.exists())
@@ -436,7 +481,7 @@ class TaskTests(unittest.TestCase):
         self.enterContext(patch.object(self.module, 'Timer', FrameTimer))
         self.enterContext(patch.object(self.module.logger, 'attr'))
         self.temp = self.enterContext(tempfile.TemporaryDirectory())
-        self.path = Path(self.temp) / 'warehouse.db'
+        self.path = Path(self.temp) / 'azurpilot.db'
         self.enterContext(patch.object(self.module, 'save_snapshot',
             side_effect=lambda *args, **kwargs: save_snapshot(*args, **kwargs, database=self.path)))
 
@@ -457,20 +502,67 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(self.task.device.click_record_clear.call_count, snapshot['pages'])
         self.task.config.task_delay.assert_called_once_with(minute=10080)
 
-    def test_failed_next_page_stops_immediately_without_partial_commit_or_second_pass(self):
+    def test_fatal_next_page_error_stops_without_partial_commit_or_second_pass(self):
         def read(*args, **kwargs):
             if reader.call_count == 2:
-                raise StorageRecognitionError('数量不确定')
+                raise StorageRecognitionError('材料网格不完整')
             return recognize_rows(*args, **kwargs)
         with patch.object(self.task, '_scan_pass', wraps=self.task._scan_pass) as scanner, \
              patch.object(self.module, 'recognize_rows', side_effect=read) as reader:
-            with self.assertRaisesRegex(StorageStatisticsError, '数量不确定'):
+            with self.assertRaisesRegex(StorageStatisticsError, '材料网格不完整'):
                 self.task.run()
         scanner.assert_called_once()
         self.assertEqual(reader.call_count, 2)
         self.assertEqual(self.task.device.click_record_clear.call_count, 1)
         self.assertFalse(self.path.exists())
         self.task.config.task_delay.assert_called_once_with(success=False)
+
+    def test_one_amount_error_still_finishes_all_pages_and_saves_other_counts(self):
+        catalog = StorageCatalog()
+        read_amount = catalog.read_amount
+        previous_id = save_snapshot('test', 'cn', [dict(id='old', name='旧记录', group='材料', amount=99)],
+                                   started_at='2026-10-01', pages=1, catalog_version='old', database=self.path)
+
+        def read(icon):
+            amount = read_amount(icon)
+            if amount == 153:
+                raise StorageItemRecognitionError('数量字形无法确认')
+            return amount
+
+        with patch.object(self.module, 'StorageCatalog', return_value=catalog), \
+             patch.object(catalog, 'read_amount', side_effect=read), \
+             patch.object(self.task, '_scan_pass', wraps=self.task._scan_pass) as scanner:
+            self.task.run()
+        scanner.assert_called_once()
+        snapshot = latest_snapshot('test', database=self.path)
+        self.assertGreater(snapshot['id'], previous_id)
+        self.assertEqual(snapshot['pages'], 4)
+        expected = {case['id']: case['amount'] for case in json.loads(
+            (FIXTURES / 'expected.json').read_text(encoding='utf-8'))}
+        expected['PrototypeGearPartsT5'] = None
+        self.assertEqual({item['id']: item['amount'] for item in snapshot['items']}, expected)
+        self.assertEqual(self.task.device.click_record_clear.call_count, 4)
+        self.task.config.task_delay.assert_called_once_with(minute=10080)
+
+    def test_same_page_item_conflict_only_discards_that_item_and_scan_continues(self):
+        catalog = StorageCatalog()
+        verify = catalog.verify
+
+        def conflict(card, reference):
+            verify(card, reference)
+            if reference.identifier == 'PrototypeGearPartsT5':
+                raise StorageItemRecognitionError('同页数量不一致')
+
+        with patch.object(self.module, 'StorageCatalog', return_value=catalog), \
+             patch.object(catalog, 'verify', side_effect=conflict):
+            self.task.run()
+        snapshot = latest_snapshot('test', database=self.path)
+        self.assertEqual(snapshot['pages'], 4)
+        expected = {case['id']: case['amount'] for case in json.loads(
+            (FIXTURES / 'expected.json').read_text(encoding='utf-8'))}
+        expected['PrototypeGearPartsT5'] = None
+        self.assertEqual({item['id']: item['amount'] for item in snapshot['items']}, expected)
+        self.task.config.task_delay.assert_called_once_with(minute=10080)
 
     def test_same_page_movement_stops_without_repeating_confirmed_data(self):
         def frames(**kwargs):
@@ -508,12 +600,12 @@ class TaskTests(unittest.TestCase):
                          {item['id']: item['amount'] for item in expected})
         self.assertTrue(all(start[0] == end[0] == 1260 for start, end in self.task.device.swipes))
 
-    def test_persistent_recognition_failure_keeps_old_snapshot_without_nudges(self):
+    def test_persistent_grid_failure_keeps_old_snapshot_without_nudges(self):
         save_snapshot('test', 'cn', [dict(id='old', name='旧记录', group='材料', amount=99)],
                       started_at='2026-10-01', pages=2, catalog_version='old', database=self.path)
         before = self.path.read_bytes()
-        with patch.object(self.module, 'recognize_rows', side_effect=StorageRecognitionError('残缺数量')) as reader:
-            with self.assertRaisesRegex(StorageStatisticsError, '残缺数量'):
+        with patch.object(self.module, 'recognize_rows', side_effect=StorageRecognitionError('材料网格不完整')) as reader:
+            with self.assertRaisesRegex(StorageStatisticsError, '材料网格不完整'):
                 self.task.run()
         reader.assert_called_once()
         nudges = [start for start, _ in self.task.device.swipes if start[0] < 1235]
@@ -574,12 +666,12 @@ class ApiIntegrationTests(unittest.TestCase):
             rows = response['result']['tables'][0]['rows']
             self.assertEqual(len(rows), 25)
             self.assertTrue(all(row[3] is None and row[4] == '未扫描' for row in rows))
-            self.assertFalse((root / 'config/storage_statistics.db').exists())
+            self.assertFalse((root / 'config/azurpilot.db').exists())
             catalog = StorageCatalog()
             items = [dict(id=item['id'], name=item['name'], group=item['group'], amount=index + 1)
                      for index, item in enumerate(catalog.items)]
             save_snapshot('testpilot', 'cn', items, started_at='2026-10-03', pages=12,
-                          catalog_version=catalog.version, database=root / 'config/storage_statistics.db')
+                          catalog_version=catalog.version, database=root / 'config/azurpilot.db')
             ws.send_json({'v': 1, 'type': 'request', 'id': 'history', 'method': 'statistics.report',
                           'params': {'instance': 'testpilot', 'category': 'storage', 'days': 30}})
             response = ws.receive_json()

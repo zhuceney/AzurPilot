@@ -297,6 +297,544 @@
         "type": "object"
       }
     },
+    "mind.catalog": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "description": "单实例操作通用入参模型。",
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance"
+        ],
+        "title": "InstanceParams",
+        "type": "object"
+      }
+    },
+    "fleetTech.catalog": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "description": "单实例操作通用入参模型。",
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance"
+        ],
+        "title": "InstanceParams",
+        "type": "object"
+      }
+    },
+    "fleetTech.report": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "description": "单实例操作通用入参模型。",
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance"
+        ],
+        "title": "InstanceParams",
+        "type": "object"
+      }
+    },
+    "fleetTech.syncMind": {
+      "mutates": true,
+      "params": {
+        "additionalProperties": false,
+        "description": "单实例操作通用入参模型。",
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance"
+        ],
+        "title": "InstanceParams",
+        "type": "object"
+      }
+    },
+    "fleetTech.patch": {
+      "mutates": true,
+      "params": {
+        "$defs": {
+          "FleetTechChange": {
+            "additionalProperties": false,
+            "description": "只修改明确提供的人工字段；恢复自动记录使用独立标记。",
+            "properties": {
+              "group_type": {
+                "minimum": 1,
+                "title": "Group Type",
+                "type": "integer"
+              },
+              "owned": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Owned"
+              },
+              "full_star": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Full Star"
+              },
+              "lv120": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Lv120"
+              },
+              "level": {
+                "anyOf": [
+                  {
+                    "maximum": 125,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Level"
+              },
+              "restore": {
+                "title": "Restore",
+                "type": "boolean"
+              },
+              "toggle": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "owned",
+                      "complete",
+                      "star"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Toggle"
+              },
+              "target": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Target"
+              }
+            },
+            "required": [
+              "group_type"
+            ],
+            "title": "FleetTechChange",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          },
+          "revision": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Revision",
+            "type": "string"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/$defs/FleetTechChange"
+            },
+            "maxItems": 1000,
+            "title": "Changes",
+            "type": "array"
+          },
+          "nations": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 4,
+            "title": "Nations",
+            "type": "object"
+          }
+        },
+        "required": [
+          "instance",
+          "revision"
+        ],
+        "title": "FleetTechPatchParams",
+        "type": "object"
+      }
+    },
+    "mind.report": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "description": "单实例操作通用入参模型。",
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance"
+        ],
+        "title": "InstanceParams",
+        "type": "object"
+      }
+    },
+    "mind.calculate": {
+      "mutates": false,
+      "params": {
+        "$defs": {
+          "MindShip": {
+            "additionalProperties": false,
+            "description": "可编辑的舰船字段，核对状态与排除状态独立保存。",
+            "properties": {
+              "name": {
+                "maxLength": 100,
+                "minLength": 1,
+                "title": "Name",
+                "type": "string"
+              },
+              "level": {
+                "maximum": 125,
+                "minimum": 0,
+                "title": "Level",
+                "type": "integer"
+              },
+              "rarity": {
+                "default": "",
+                "enum": [
+                  "",
+                  "N",
+                  "R",
+                  "SR",
+                  "SSR",
+                  "UR"
+                ],
+                "title": "Rarity",
+                "type": "string"
+              },
+              "base_rarity": {
+                "default": "",
+                "enum": [
+                  "",
+                  "N",
+                  "R",
+                  "SR",
+                  "SSR",
+                  "UR"
+                ],
+                "title": "Base Rarity",
+                "type": "string"
+              },
+              "excluded": {
+                "default": false,
+                "title": "Excluded",
+                "type": "boolean"
+              },
+              "review": {
+                "default": false,
+                "title": "Review",
+                "type": "boolean"
+              },
+              "source": {
+                "default": "",
+                "maxLength": 200,
+                "title": "Source",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "level"
+            ],
+            "title": "MindShip",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          },
+          "ships": {
+            "items": {
+              "$ref": "#/$defs/MindShip"
+            },
+            "maxItems": 5000,
+            "title": "Ships",
+            "type": "array"
+          }
+        },
+        "required": [
+          "instance",
+          "ships"
+        ],
+        "title": "MindCalculateParams",
+        "type": "object"
+      }
+    },
+    "mind.save": {
+      "mutates": true,
+      "params": {
+        "$defs": {
+          "MindShip": {
+            "additionalProperties": false,
+            "description": "可编辑的舰船字段，核对状态与排除状态独立保存。",
+            "properties": {
+              "name": {
+                "maxLength": 100,
+                "minLength": 1,
+                "title": "Name",
+                "type": "string"
+              },
+              "level": {
+                "maximum": 125,
+                "minimum": 0,
+                "title": "Level",
+                "type": "integer"
+              },
+              "rarity": {
+                "default": "",
+                "enum": [
+                  "",
+                  "N",
+                  "R",
+                  "SR",
+                  "SSR",
+                  "UR"
+                ],
+                "title": "Rarity",
+                "type": "string"
+              },
+              "base_rarity": {
+                "default": "",
+                "enum": [
+                  "",
+                  "N",
+                  "R",
+                  "SR",
+                  "SSR",
+                  "UR"
+                ],
+                "title": "Base Rarity",
+                "type": "string"
+              },
+              "excluded": {
+                "default": false,
+                "title": "Excluded",
+                "type": "boolean"
+              },
+              "review": {
+                "default": false,
+                "title": "Review",
+                "type": "boolean"
+              },
+              "source": {
+                "default": "",
+                "maxLength": 200,
+                "title": "Source",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "level"
+            ],
+            "title": "MindShip",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          },
+          "ships": {
+            "items": {
+              "$ref": "#/$defs/MindShip"
+            },
+            "maxItems": 5000,
+            "title": "Ships",
+            "type": "array"
+          },
+          "revision": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Revision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance",
+          "ships",
+          "revision"
+        ],
+        "title": "MindSaveParams",
+        "type": "object"
+      }
+    },
+    "mind.import": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "content": {
+            "maxLength": 8000000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance",
+          "filename",
+          "content"
+        ],
+        "title": "MindFileParams",
+        "type": "object"
+      }
+    },
+    "mind.recognize": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "content": {
+            "maxLength": 8000000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance",
+          "filename",
+          "content"
+        ],
+        "title": "MindFileParams",
+        "type": "object"
+      }
+    },
+    "mind.export": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "properties": {
+          "instance": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Instance",
+            "type": "string"
+          },
+          "format": {
+            "default": "xlsx",
+            "enum": [
+              "json",
+              "csv",
+              "xlsx"
+            ],
+            "title": "Format",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instance"
+        ],
+        "title": "MindExportParams",
+        "type": "object"
+      }
+    },
     "stock.status": {
       "mutates": false,
       "params": {
@@ -1859,6 +2397,11 @@
             ],
             "default": null,
             "title": "Task"
+          },
+          "include_series": {
+            "default": true,
+            "title": "Include Series",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2073,6 +2616,64 @@
         "description": "API 入参基础模型，禁止额外字段并启用严格类型校验。",
         "properties": {},
         "title": "Params",
+        "type": "object"
+      }
+    },
+    "remote.pair.create": {
+      "mutates": true,
+      "params": {
+        "additionalProperties": false,
+        "description": "API 入参基础模型，禁止额外字段并启用严格类型校验。",
+        "properties": {},
+        "title": "Params",
+        "type": "object"
+      }
+    },
+    "remote.pair.status": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "description": "服务器生成的配对会话标识。",
+        "properties": {
+          "id": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "RemotePairingParams",
+        "type": "object"
+      }
+    },
+    "remote.clients": {
+      "mutates": false,
+      "params": {
+        "additionalProperties": false,
+        "description": "API 入参基础模型，禁止额外字段并启用严格类型校验。",
+        "properties": {},
+        "title": "Params",
+        "type": "object"
+      }
+    },
+    "remote.revoke": {
+      "mutates": true,
+      "params": {
+        "additionalProperties": false,
+        "description": "本机生成的配对客户端标识。",
+        "properties": {
+          "id": {
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "RemoteClientParams",
         "type": "object"
       }
     },
@@ -2463,11 +3064,12 @@
                 "overview",
                 "logs",
                 "preview",
-                "stock"
+                "stock",
+                "notifications"
               ],
               "type": "string"
             },
-            "maxItems": 5,
+            "maxItems": 6,
             "title": "Topics",
             "type": "array"
           }
